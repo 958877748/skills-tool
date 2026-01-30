@@ -40,13 +40,14 @@ async function main() {
   console.log("");
 
   // 创建 ReadWriteFs - 直接访问本地文件系统
-  // root 设置为 "."，这样绝对路径会被正确映射
-  const rwfs = new ReadWriteFs({ root: "." });
+  // root 设置为 "./workspace"，让 AI 只能看到 workspace 里面的内容
+  const rwfs = new ReadWriteFs({ root: "./workspace" });
 
   // 创建 Bash 实例
+  // cwd 设置为 "/"，因为 AI 的根目录就是 workspace
   const bash = new Bash({
     fs: rwfs,
-    cwd: "/workspace",
+    cwd: "/",
   });
 
   // 创建自定义沙盒接口
@@ -70,10 +71,11 @@ async function main() {
   };
 
   // 创建带有技能文件的 bash 工具
-  // 关键：使用自定义 sandbox，destination 设置为 "/workspace"
+  // 关键：使用自定义 sandbox，destination 设置为 "/"
+  // 因为 AI 的根目录就是 workspace，所以 destination 是 "/"
   const { tools } = await createBashTool({
     sandbox: sandbox as any,
-    destination: "/workspace",
+    destination: "/",
     files,
     extraInstructions: instructions,
   });
@@ -89,8 +91,8 @@ async function main() {
     },
     instructions: `你是一个具有技能访问权限的助手。
 使用 skill 工具发现如何使用技能，然后使用 bash 运行其脚本。
-技能位于 /workspace/skills/<skill-name>/。
-所有文件操作都在 /workspace 目录中进行。`,
+技能位于 /skills/<skill-name>/。
+所有文件操作都在根目录 / 中进行。`,
     onStepFinish: ({ toolCalls, toolResults }) => {
       if (toolCalls && toolCalls.length > 0) {
         for (const call of toolCalls) {
@@ -134,7 +136,7 @@ async function main() {
     2024-01-17,Widget A,150,29.99,North
 
     请：
-    1. 首先，将数据写入 /workspace/sales.csv 文件
+    1. 首先，将数据写入 /sales.csv 文件
     2. 使用 csv 技能分析文件
     3. 筛选出仅包含北部地区的数据
     4. 按数量排序（从高到低）
